@@ -1,6 +1,6 @@
 import math
-
 import numpy as np
+import sympy as sp
 
 
 def kalman_step(A, C, Q, R, y, x, V):
@@ -62,3 +62,21 @@ def gaussian_prob(x, m, C, use_log=False):
 def sample_gauss(mu, sigma, n):
     # sample n samples from a given multivariate normal distribution
     return np.random.multivariate_normal(mu, sigma, n)
+
+
+
+def derive_input_matrike(F, L, q):
+    T = sp.symbols('T')
+    F = sp.Matrix(F)
+    Fi = sp.exp(F * T)
+    Fi = Fi.subs(T, 1)
+    #print(Fi) 
+    #print(Fi.shape)
+
+    L = sp.Matrix(L)
+    Q = sp.integrate((Fi * L) * q * (Fi * L).T, (T, 0, T))
+    Q = Q.subs(T, 1)
+    #print(Q)
+    #print(Q.shape)
+
+    return np.array(Fi, dtype=np.float32) , np.array(Q, dtype=np.float32)
