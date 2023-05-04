@@ -77,7 +77,6 @@ def get_matrices(model_type, r, q):
     # return the matrices   
     return Fi_matrika, H, Q, R
 
-# TODO test the function
 # function implements Random Walk (RW), 
 # Nearly-Constant Velocity (NCV), 
 # and Nearly-Constant Acceleration (NCA) models using Kalman filter 
