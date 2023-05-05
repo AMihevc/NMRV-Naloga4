@@ -1,7 +1,7 @@
 import numpy as np
 import math
 import matplotlib.pyplot as plt
-from ex4_utils import kalman_step, gaussian_prob, derive_input_matrike
+from ex4_utils import kalman_step, derive_input_matrike
 
 # function that returns the matrices based on the model type
 def get_matrices(model_type, r, q):
