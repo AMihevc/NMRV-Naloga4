@@ -264,6 +264,7 @@ class ParticleTracker(Tracker):
         # here the template get some weird shape and I am not sure why
         # I tried to fix it but I could not figure it out
         # I am not sure if this is the best way to fix it amybe just skip the update if the shape is wrong ?? 
+        
         print(f"particles_state: {position}")
         print(f"template: {self.template.shape}")
         print(f"kernel: {self.kernel_size}")
