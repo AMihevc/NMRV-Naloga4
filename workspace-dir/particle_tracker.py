@@ -210,7 +210,7 @@ class ParticleTracker(Tracker):
         return 1 / np.sqrt(2) * np.linalg.norm(np.sqrt(p) - np.sqrt(q))
     
     def calculate_weights(self, image):
-        #print("calculate weights")
+        #print("calculate weights") #debug
         for i in range(self.number_of_particles):
             try: 
                 #get the patch from the image
@@ -251,13 +251,25 @@ class ParticleTracker(Tracker):
 
         # recalculating the weights based on visiual model similarity
         self.calculate_weights(image)
+        #this might be very slow debug later
         
         # Compute the new state estimate
         weights_normalized = self.weights / np.sum(self.weights)
         self.particles_state = np.matmul( np.transpose(self.particles), weights_normalized)
 
         #update the template
-        self.template, _ = get_patch(image, self.particles_state[0:2], self.search_window_size) #flag 
+        #round the particle state to get the position of the search window
+        position = np.around(self.particles_state[0:2])
+        self.template, _ = get_patch(image, position, self.search_window_size) #flag 
+        # here the template get some weird shape and I am not sure why
+        # I tried to fix it but I could not figure it out
+        # I am not sure if this is the best way to fix it amybe just skip the update if the shape is wrong ?? 
+        print(f"particles_state: {position}")
+        print(f"template: {self.template.shape}")
+        print(f"kernel: {self.kernel_size}")
+        print(f"search_window: {self.search_window_size}")
+        print("----------")
+        
         hist = self.extract_norm_histogram(self.template)
         self.template_histogram = self.alpha_update * hist + (1 - self.alpha_update) * self.template_histogram
 
