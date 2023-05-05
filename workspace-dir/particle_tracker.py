@@ -87,26 +87,22 @@ class ParticleTracker(Tracker):
     # Constructor
     def __init__(
             self,
-            enlargement_factor=1.0,
-            alpha_update=0.05,
-            sigma_kernel=1,
-            sigma_distance = 0.1,
-            lamda = 0.000001,
+            enlargement_factor=2.0,
+            alpha_update=0.5,
+            sigma_kernel=0.5,
+            sigma_distance = 0.11,
             histogram_bins=6,
             number_of_particles=150,
             q_model_noise = 1,
-            r_measurement_noise = 1,
             model='NCV',
         ):
         self.enlargement_factor = enlargement_factor
         self.alpha_update = alpha_update
         self.sigma_kernel = sigma_kernel
         self.sigma_distance = sigma_distance
-        self.lamda = lamda
         self.histogram_bins = histogram_bins
         self.number_of_particles = number_of_particles
         self.q_model_noise = q_model_noise
-        self.r_measurement_noise = r_measurement_noise
         self.model = model
 
         #matrices for motion model and kalman filter
@@ -163,16 +159,21 @@ class ParticleTracker(Tracker):
         self.original_size = (region[2], region[3])
 
         #get the size of the search window with the enlargement factor
-        self.search_window_size = (int(region[2] * self.enlargement_factor), int(region[3] * self.enlargement_factor))
-
+        x_pos = int(region[2] * self.enlargement_factor)
+        y_pos = int(region[3] * self.enlargement_factor)
         # make sure the search window is odd sized
-        if self.search_window_size[0] % 2 == 0:
-            self.search_window_size[0] += 1
-        if self.search_window_size[1] % 2 == 0:
-            self.search_window_size[1] += 1
+        if x_pos % 2 == 0:
+            x_pos += 1
+        if y_pos % 2 == 0:
+            y_pos += 1
+      
+        self.search_window_size = (x_pos, y_pos)
+        
+
+
 
         #define the matrix for the motion model
-        self.Fi_matrika, _, self.Q_covariance, _ = get_matrices(self.model, self.q_model_noise, self.r_measurement_noise)
+        self.Fi_matrika, _, self.Q_covariance, _ = get_matrices(self.model, self.q_model_noise, 1)
 
 
         #create the kernel for visual model
@@ -193,6 +194,7 @@ class ParticleTracker(Tracker):
 
         #initialize particles using gausian distribution
         self.particles = sample_gauss(self.particles_state, self.Q_covariance, self.number_of_particles) # majbe tuki kej zaokroziš??
+        self.particles[:, 0:2] = np.around(self.particles[:, 0:2])
         self.weights = np.ones(self.number_of_particles) # weights are initialized to 1
     
     #code from instructions 
@@ -202,6 +204,7 @@ class ParticleTracker(Tracker):
         random_samples = np.random.rand(self.number_of_particles)
         sampled_indexes = np.digitize(random_samples, weights_cumsum)
         self.particles[sampled_indexes.flatten(), :]
+
 
     def hellinger_distance(self, p, q):
         return 1 / np.sqrt(2) * np.linalg.norm(np.sqrt(p) - np.sqrt(q))
@@ -244,7 +247,7 @@ class ParticleTracker(Tracker):
 
         #dont forget to add noise to the particles
         self.particles = self.particles + sample_gauss(np.zeros(self.Fi_matrika.shape[0]), self.Q_covariance, self.number_of_particles)
-        # majbe zaokrožiš?
+        self.particles[:, 0:2] = np.around(self.particles[:, 0:2])
 
         # recalculating the weights based on visiual model similarity
         self.calculate_weights(image)
