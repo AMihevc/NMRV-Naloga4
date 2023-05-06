@@ -2,7 +2,8 @@ import numpy as np
 from ex2_utils import get_patch, create_epanechnik_kernel, extract_histogram
 from ex4_utils import sample_gauss, derive_input_matrike
 from utils.tracker import Tracker
-
+import cv2
+import random
 
 
 def get_matrices(model_type, r, q):
@@ -124,6 +125,14 @@ class ParticleTracker(Tracker):
         self.kernel_size = None
 
     def extract_norm_histogram(self, patch):
+
+        #make sure the patch is same size as the kernel
+        # if patch.shape != self.kernel.shape:
+        #     print("patch is not the same size as the kernel")
+        #     print(f"patch: {patch.shape}")
+        #     print(f"kernel: {self.kernel.shape}")
+
+            # patch = cv2.resize(patch, self.kernel.shape)
         
         histogram = extract_histogram(patch, self.histogram_bins, self.kernel)
 
@@ -131,9 +140,18 @@ class ParticleTracker(Tracker):
         histogram = histogram / np.sum(histogram)
 
         return histogram
+    
     #function for istogram extraction
     def extract_histogram_from_image(self, image):
         patch, _ = get_patch(image, self.search_window_position, self.search_window_size)
+
+        #make sure the patch is same size as the kernel
+        # if patch.shape != self.kernel.shape:
+        #     print("patch is not the same size as the kernel")
+        #     print(f"patch: {patch.shape}")
+        #     print(f"kernel: {self.kernel.shape}")
+
+            # patch = cv2.resize(patch, self.kernel.shape)
 
         histogram = extract_histogram(patch, self.histogram_bins, self.kernel)
 
@@ -144,7 +162,7 @@ class ParticleTracker(Tracker):
 
     def initialize(self, image, region):
 
-        region = np.array(region).astype(np.int)
+        region = np.array(region).astype(np.int64)
 
         #make sure the region is odd sized 
         if region[2] % 2 == 0:
@@ -169,8 +187,8 @@ class ParticleTracker(Tracker):
       
         self.search_window_size = (x_pos, y_pos)
         
-
-
+        np.random.seed(1)
+        random.seed(1)
 
         #define the matrix for the motion model
         self.Fi_matrika, _, self.Q_covariance, _ = get_matrices(self.model, self.q_model_noise, 1)
@@ -220,7 +238,7 @@ class ParticleTracker(Tracker):
                 # print(f"kernel: {self.kernel_size}")
                 # print(f"search_window: {self.search_window_size}")
 
-                # #get the histogram of the patch
+                # get the histogram of the patch
                 patch_histogram = self.extract_norm_histogram(patch)
 
                 #calculate the similarity between the patch and the template using hellinger distance
@@ -265,11 +283,19 @@ class ParticleTracker(Tracker):
         # I tried to fix it but I could not figure it out
         # I am not sure if this is the best way to fix it amybe just skip the update if the shape is wrong ?? 
         
-        print(f"particles_state: {position}")
-        print(f"template: {self.template.shape}")
-        print(f"kernel: {self.kernel_size}")
-        print(f"search_window: {self.search_window_size}")
-        print("----------")
+        # print(f"particles_state: {position}")
+        # print(f"template: {self.template.shape}")
+        # print(f"kernel: {self.kernel_size}")
+        # print(f"search_window: {self.search_window_size}")
+        # print("----------")
+
+        #make sure the template is the same size as the kernel
+        if self.template.shape[0] != self.kernel.shape[0] or self.template.shape[1] != self.kernel.shape[1]:
+            print("template is not the same size as the kernel")
+            print(f"template: {self.template.shape}")
+            print(f"kernel: {self.kernel.shape}")
+            self.template = cv2.resize(self.template, self.kernel.shape)
+            print(f"template new shape: {self.template.shape}")
         
         hist = self.extract_norm_histogram(self.template)
         self.template_histogram = self.alpha_update * hist + (1 - self.alpha_update) * self.template_histogram
@@ -281,4 +307,7 @@ class ParticleTracker(Tracker):
 
 
 
-
+#TODO
+# Tracker takes a lot of time to evaluate it should only take about 2mins 
+# I dont know what the problem is yet need to debug it
+# I it might be the calculate_weights function that takes a lot of time

@@ -1,6 +1,6 @@
 ---
 particle_tracker:  # use tracker identifier as you want to call your tracker from terminal
-  tracker_path: C:\Users\am8130\Documents\Faks\2.semester\NMRV\4.naloga\NMRV-naloga4\workspace-dir\particle_tracker.py  # path to the Python script with your tracker
+  tracker_path: /home/anze/Documents/Faks/2.Semester/NMRV-AMCV/NMRV-Naloga4/NMRV-Naloga4/workspace-dir/particle_tracker.py  # path to the Python script with your tracker
   class_name: ParticleTracker  # class name of your tracker
   # paths:  # optionally: additional Python paths you want to include
   #   - insert\path\1

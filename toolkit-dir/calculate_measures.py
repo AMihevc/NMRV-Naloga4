@@ -35,8 +35,10 @@ def tracking_analysis(workspace_path, tracker_id):
         overlaps, overlap_valid = trajectory_overlaps(regions, sequence.groundtruth)
         failures = count_failures(regions)
         t = average_time(times, regions)
-
-        per_seq_overlaps[i] = sum(overlaps) / sum(overlap_valid)
+        if sum(overlap_valid) == 0:
+            per_seq_overlaps[i] = 0
+        else:
+            per_seq_overlaps[i] = sum(overlaps) / sum(overlap_valid)
         per_seq_failures[i] = failures
         per_seq_time[i] = t
     
