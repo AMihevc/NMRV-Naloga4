@@ -7,6 +7,9 @@ import random
 import math
 import sympy as sp
 
+# run the tracker by running the following command from the toolkit-dir:
+# python evaluate_tracker.py --workspace_path ../workspace-dir --tracker particle_tracker
+
 def get_matrices_fixed(model_type, r, q):
     # INPUTS:
     # model_type - a string that can be 'RW', 'NCV', or 'NCA'
@@ -140,7 +143,7 @@ class ParticleTracker(Tracker):
             sigma_distance = 0.1,
             histogram_bins=16,
             number_of_particles=30,
-            q_model_noise = 1,
+            q_model_noise = 10,
             model='NCA',
         ):
         self.enlargement_factor = enlargement_factor
@@ -219,7 +222,7 @@ class ParticleTracker(Tracker):
         self.template = self.template / np.sum(self.template)
 
         #set the matrices for the motion model
-        self.Fi_matrika, self.Q_covariance, self.C, self.R = get_matrices_fixed(self.model, self.q_model_noise, 115)
+        self.Fi_matrika, self.Q_covariance, self.C, self.R = get_matrices_fixed(self.model, 1, self.q_model_noise)
 
         #initialize particles using gausian distribution 
         self.particles = np.zeros((self.number_of_particles, self.Q_covariance.shape[0]))
@@ -316,6 +319,7 @@ class ParticleTracker(Tracker):
 
     #function for tracking the object
     def track(self, image):
+
             
         # replace the particles by sampling new particles based on the weight distribution
         new_particles = self.resample_particles()
@@ -345,3 +349,97 @@ class ParticleTracker(Tracker):
         top = max(self.position[1] - self.size[1] / 2, 0)
 
         return [left, top, self.size[0], self.size[1]]
+    
+#define same tracker but with different parameters
+class ParticleTrackerRW(ParticleTracker):
+
+    #override the name function 
+    def name(self):
+        return "ParticleTrackerRW"
+    
+    #override the init function
+    # Constructor
+    def __init__(
+            self,
+            enlargement_factor=1.0,
+            alpha_update=0.05,
+            sigma_kernel=1,
+            sigma_distance = 0.1,
+            histogram_bins=16,
+            number_of_particles=30,
+            q_model_noise = 10,
+            model='RW',
+        ):
+        self.enlargement_factor = enlargement_factor
+        self.alpha_update = alpha_update
+        self.sigma_kernel = sigma_kernel
+        self.sigma_distance = sigma_distance
+        self.histogram_bins = histogram_bins
+        self.number_of_particles = number_of_particles
+        self.q_model_noise = q_model_noise
+        self.model = model
+
+        #matrices for motion model and kalman filter
+        self.Fi_matrika, self.Q_covariance = None , None
+        
+        self.particles = None
+        self.particles_state = None
+        self.weights = None
+
+        #template, search window, position and size
+        self.template = None
+        self.template_histogram = None
+        self.position = None
+        self.size = None
+        self.original_size = None
+
+        #kernel
+        self.kernel = None
+        self.kernel_size = None
+
+
+class ParticleTrackerNCV(ParticleTracker):
+
+    #override the name function 
+    def name(self):
+        return "ParticleTrackerNCV"
+    
+    #override the init function
+    # Constructor
+    def __init__(
+            self,
+            enlargement_factor=1.0,
+            alpha_update=0.05,
+            sigma_kernel=1,
+            sigma_distance = 0.1,
+            histogram_bins=16,
+            number_of_particles=30,
+            q_model_noise = 10,
+            model='NCV',
+        ):
+        self.enlargement_factor = enlargement_factor
+        self.alpha_update = alpha_update
+        self.sigma_kernel = sigma_kernel
+        self.sigma_distance = sigma_distance
+        self.histogram_bins = histogram_bins
+        self.number_of_particles = number_of_particles
+        self.q_model_noise = q_model_noise
+        self.model = model
+
+        #matrices for motion model and kalman filter
+        self.Fi_matrika, self.Q_covariance = None , None
+        
+        self.particles = None
+        self.particles_state = None
+        self.weights = None
+
+        #template, search window, position and size
+        self.template = None
+        self.template_histogram = None
+        self.position = None
+        self.size = None
+        self.original_size = None
+
+        #kernel
+        self.kernel = None
+        self.kernel_size = None
