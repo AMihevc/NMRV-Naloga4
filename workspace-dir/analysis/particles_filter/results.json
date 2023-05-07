@@ -1,177 +1,177 @@
 {
-  "tracker_name": "ParticleTracker",
+  "tracker_name": "particles_filter",
   "results": [
     {
       "sequence_name": "ball",
       "sequence_length": 602,
-      "overlap": 0.6222211182582957,
+      "overlap": 0.6333254934563678,
       "failures": 0,
-      "speed": 211.53791755678643
+      "speed": 228.56524526863757
     },
     {
       "sequence_name": "basketball",
       "sequence_length": 725,
-      "overlap": 0.6516024853707101,
+      "overlap": 0.639104640109176,
       "failures": 1,
-      "speed": 158.25519386193196
+      "speed": 111.88807976598964
     },
     {
       "sequence_name": "bicycle",
       "sequence_length": 271,
-      "overlap": 0.3861008716410283,
+      "overlap": 0.3938086342420205,
       "failures": 0,
-      "speed": 245.66438618804096
+      "speed": 176.20011589416333
     },
     {
       "sequence_name": "bolt",
       "sequence_length": 350,
-      "overlap": 0.6029459809125591,
-      "failures": 2,
-      "speed": 175.5567570759809
+      "overlap": 0.5243496683748787,
+      "failures": 1,
+      "speed": 130.47831002863774
     },
     {
       "sequence_name": "car",
       "sequence_length": 252,
-      "overlap": 0.3702788992247516,
+      "overlap": 0.352424927208736,
       "failures": 0,
-      "speed": 210.82452240904465
+      "speed": 203.54585769034796
     },
     {
       "sequence_name": "david",
       "sequence_length": 770,
-      "overlap": 0.5459116265647859,
-      "failures": 1,
-      "speed": 171.05712429664723
+      "overlap": 0.5341002572868188,
+      "failures": 3,
+      "speed": 149.58391192426637
     },
     {
       "sequence_name": "diving",
       "sequence_length": 219,
-      "overlap": 0.3805063091392694,
-      "failures": 2,
-      "speed": 159.9928080578869
+      "overlap": 0.35945506783261694,
+      "failures": 0,
+      "speed": 173.34927460650408
     },
     {
       "sequence_name": "fernando",
       "sequence_length": 292,
-      "overlap": 0.3893297283330917,
-      "failures": 1,
-      "speed": 92.69305835010636
+      "overlap": 0.40579245406068204,
+      "failures": 0,
+      "speed": 74.49593138047098
     },
     {
       "sequence_name": "fish1",
       "sequence_length": 436,
-      "overlap": 0.27107518790694357,
+      "overlap": 0.2823971527601034,
       "failures": 4,
-      "speed": 206.14988496492833
+      "speed": 181.6891361260818
     },
     {
       "sequence_name": "fish2",
       "sequence_length": 310,
-      "overlap": 0.31858904820792927,
-      "failures": 3,
-      "speed": 150.0790000848547
+      "overlap": 0.30061169185147596,
+      "failures": 2,
+      "speed": 144.94394248025645
     },
     {
       "sequence_name": "gymnastics",
       "sequence_length": 207,
-      "overlap": 0.5556550698916811,
+      "overlap": 0.572390175599554,
       "failures": 0,
-      "speed": 195.2522445353825
+      "speed": 186.5818213926315
     },
     {
       "sequence_name": "hand1",
       "sequence_length": 244,
-      "overlap": 0.43413497695885067,
+      "overlap": 0.4921480368385711,
       "failures": 0,
-      "speed": 221.81401373121483
+      "speed": 206.02586823649372
     },
     {
       "sequence_name": "hand2",
       "sequence_length": 267,
-      "overlap": 0.49037664853706336,
-      "failures": 5,
-      "speed": 178.12020959397853
+      "overlap": 0.4818038181302113,
+      "failures": 4,
+      "speed": 170.28105274449507
     },
     {
       "sequence_name": "jogging",
       "sequence_length": 307,
-      "overlap": 0.5753525740460346,
-      "failures": 1,
-      "speed": 199.55664835322796
+      "overlap": 0.6823963118358618,
+      "failures": 2,
+      "speed": 186.09975147093948
     },
     {
       "sequence_name": "motocross",
       "sequence_length": 164,
-      "overlap": 0.4532393753679467,
+      "overlap": 0.4460494884606837,
       "failures": 4,
-      "speed": 85.2631264152995
+      "speed": 67.7777839042381
     },
     {
       "sequence_name": "polarbear",
       "sequence_length": 371,
-      "overlap": 0.5605733545350848,
+      "overlap": 0.5603234876493446,
       "failures": 0,
-      "speed": 173.05754820256774
+      "speed": 167.109486536644
     },
     {
       "sequence_name": "skating",
       "sequence_length": 400,
-      "overlap": 0.4381725407560135,
+      "overlap": 0.5148675577020072,
       "failures": 4,
-      "speed": 123.9896854659688
+      "speed": 121.5314162366409
     },
     {
       "sequence_name": "sphere",
       "sequence_length": 201,
-      "overlap": 0.45643146925481537,
+      "overlap": 0.45493592956404727,
       "failures": 0,
-      "speed": 149.6815524970625
+      "speed": 146.32469067397182
     },
     {
       "sequence_name": "sunshade",
       "sequence_length": 172,
-      "overlap": 0.5547213605806844,
+      "overlap": 0.5831260590336814,
       "failures": 0,
-      "speed": 205.6317441757469
+      "speed": 211.11453203935514
     },
     {
       "sequence_name": "surfing",
       "sequence_length": 282,
-      "overlap": 0.660451761625822,
+      "overlap": 0.6671724146689033,
       "failures": 0,
-      "speed": 248.4159650281064
+      "speed": 247.00258855209194
     },
     {
       "sequence_name": "torus",
       "sequence_length": 264,
-      "overlap": 0.4883507593399688,
-      "failures": 1,
-      "speed": 214.85283250322723
+      "overlap": 0.5509314765225952,
+      "failures": 0,
+      "speed": 218.78901193514778
     },
     {
       "sequence_name": "trellis",
       "sequence_length": 569,
-      "overlap": 0.46763553464824675,
-      "failures": 0,
-      "speed": 194.784293494209
+      "overlap": 0.4240738509474583,
+      "failures": 1,
+      "speed": 177.93377499519582
     },
     {
       "sequence_name": "tunnel",
       "sequence_length": 731,
-      "overlap": 0.34197033368974644,
-      "failures": 7,
-      "speed": 193.3148422232869
+      "overlap": 0.388806566755572,
+      "failures": 9,
+      "speed": 185.48475467841058
     },
     {
       "sequence_name": "woman",
       "sequence_length": 597,
-      "overlap": 0.5931199521225297,
-      "failures": 1,
-      "speed": 211.71897365996386
+      "overlap": 0.6219191574949042,
+      "failures": 3,
+      "speed": 200.45507138977794
     }
   ],
-  "average_overlap": 0.48369779028807725,
-  "total_failures": 37,
-  "average_speed": 182.38601386356046,
+  "average_overlap": 0.49442976326609456,
+  "total_failures": 38,
+  "average_speed": 169.46880874797458,
   "total_frames": 9003
 }

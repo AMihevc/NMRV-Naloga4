@@ -4,9 +4,10 @@ from ex4_utils import sample_gauss, derive_input_matrike
 from utils.tracker import Tracker
 import cv2
 import random
+import math
+import sympy as sp
 
-
-def get_matrices(model_type, r, q):
+def get_matrices_fixed(model_type, r, q):
     # INPUTS:
     # model_type - a string that can be 'RW', 'NCV', or 'NCA'
     # r - the number of dimensions of the state vector??? (not sure)
@@ -17,67 +18,112 @@ def get_matrices(model_type, r, q):
     # Q - the system noise covariance
     # R - the observation noise covariance
 
+    
     # Random Walk (RW)
     if model_type == 'RW':
-        F = np.array([[0, 0], 
-                       [0, 0]], dtype=np.float32)
+        T = sp.symbols('T')
+        F = sp.Matrix([[0, 0], 
+                       [0, 0]])
+        
+ 
 
-        L = np.array([[1, 0], 
-                      [0, 1]], dtype=np.float32)
+        L = sp.Matrix([[1, 0], 
+                      [0, 1]])
+        # intergrate L to get Q
 
         H = np.array([[1, 0], 
                       [0, 1]], dtype=np.float32)
 
         R = r * np.array([[1, 0], 
                       [0, 1]], dtype=np.float32)
+        
+        #intergrate F to get Fi
+        Fi = sp.exp(F * T)
+        Fi = Fi.subs(T, 1)
+        
+        # intergrate L to get Q
+        Q = sp.integrate((Fi * L) * q * (Fi * L).T, (T, 0, T))
+        Q = Q.subs(T, 1)
+
+        Fi = np.array(Fi, dtype="float")
+        Q = np.array(Q, dtype="float")
 
     # Nearly-Constant Velocity (NCV) 
     elif model_type == 'NCV':
-        F = np.array([[0, 0, 1, 0], 
+        T = sp.symbols('T')
+        F = sp.Matrix([[0, 0, 1, 0], 
                       [0, 0, 0, 1],
                       [0, 0, 0, 0],
-                      [0, 0, 0, 0]], dtype=np.float32)
+                      [0, 0, 0, 0]])
         
-        L = np.array([[0, 0],
+        L = sp.Matrix([[0, 0],
                       [0, 0],
                       [1, 0], 
-                      [0, 1]], dtype=np.float32)
+                      [0, 1]])
 
         H = np.array([[1, 0, 0, 0], 
-                      [0, 1, 0, 0]], dtype=np.float32)
+                      [0, 1, 0, 0]], dtype="float")
 
         R = r * np.array([[1, 0], 
-                          [0, 1]], dtype=np.float32)
+                          [0, 1]], dtype="float")
+
+        #intergrate F to get Fi
+        Fi = sp.exp(F * T)
+        Fi = Fi.subs(T, 1)
+       
+        # intergrate L to get Q
+        Q = sp.integrate((Fi * L) * q * (Fi * L).T, (T, 0, T))
+        Q = Q.subs(T, 1)
+
+        Fi = np.array(Fi, dtype="float")
+        Q = np.array(Q, dtype="float")
 
     # Nearly-Constant Acceleration (NCA) 
     elif model_type == 'NCA':
-        F = np.array([ [0, 0, 1, 0, 0, 0], 
+        T = sp.symbols('T')
+        F = sp.Matrix([ [0, 0, 1, 0, 0, 0], 
                         [0, 0, 0, 1, 0, 0],
                         [0, 0, 0, 0, 1, 0],
                         [0, 0, 0, 0, 0, 1],
                         [0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0]], dtype=np.float32)
+                        [0, 0, 0, 0, 0, 0]])
+
         
-        L = np.array([[0, 0],
+        L = sp.Matrix([[0, 0],
                       [0, 0],
-                      [0, 0],
-                      [0, 0],
-                      [1, 0], 
-                      [0, 1]], dtype=np.float32)
+                      [1, 0],
+                      [0, 1],
+                      [0, 0], 
+                      [0, 0]])
+      
 
         H = np.array([[1, 0, 0, 0, 0, 0], 
                       [0, 1, 0, 0, 0, 0]], dtype=np.float32)
 
         R = r * np.array([[1, 0], 
                           [0, 1]], dtype=np.float32)
+
+        #intergrate F to get Fi
+        Fi = sp.exp(F * T)
+        Fi = Fi.subs(T, 1)
+
+        # intergrate L to get Q
+        Q = sp.integrate((Fi * L) * q * (Fi * L).T, (T, 0, T))
+        Q = Q.subs(T, 1)
+
+        
+        # convert Fi and Q to numpy arrays
+        Fi = np.array(Fi, dtype="float")
+        Q = np.array(Q, dtype="float")
+
     else:
         raise ValueError('Unknown model type')
     
     #derive Fi and L to get the transition matrix
-    Fi_matrika, Q = derive_input_matrike(F, L, q)
+    # Fi_matrika, Q = derive_input_matrike(F, L, q)
 
     # return the matrices   
-    return Fi_matrika, H, Q, R
+    return Fi, Q, H, R
 
 class ParticleTracker(Tracker):
 
@@ -88,14 +134,14 @@ class ParticleTracker(Tracker):
     # Constructor
     def __init__(
             self,
-            enlargement_factor=2.0,
-            alpha_update=0.5,
-            sigma_kernel=0.5,
-            sigma_distance = 0.11,
-            histogram_bins=6,
-            number_of_particles=150,
+            enlargement_factor=1.0,
+            alpha_update=0.05,
+            sigma_kernel=1,
+            sigma_distance = 0.1,
+            histogram_bins=16,
+            number_of_particles=30,
             q_model_noise = 1,
-            model='NCV',
+            model='NCA',
         ):
         self.enlargement_factor = enlargement_factor
         self.alpha_update = alpha_update
@@ -116,24 +162,111 @@ class ParticleTracker(Tracker):
         #template, search window, position and size
         self.template = None
         self.template_histogram = None
-        self.search_window_position = None
-        self.search_window_size = None
+        self.position = None
+        self.size = None
         self.original_size = None
 
         #kernel
         self.kernel = None
         self.kernel_size = None
 
+    #function for getting the size of the search window
+    def get_size(self, region, en_factor):
+        x_size = round(region[2] * en_factor)
+        y_size = round(region[3] * en_factor)
+        if x_size % 2 == 0:
+            x_size += 1
+        if y_size % 2 == 0:
+            y_size += 1
+        return  (x_size, y_size)
+
+    #function for initializing the tracker  
+    def initialize(self, image, region: list):
+
+        # # region = np.array(region).astype(np.int64)
+
+        region[2] = math.floor(region[2])
+        if region[2] % 2 == 0:
+            region[2] += 1
+
+        region[3] = math.floor(region[3])
+        if region[3] % 2 == 0:
+            region[3] += 1
+        
+        gor = max(region[1], 0)
+        levo = max(region[0], 0)
+        dol = int(region[1] + region[3])
+        desno = int(region[0] + region[2])
+
+        self.template = image[int(gor):int(dol), int(levo):int(desno)]
+        
+        #set original size of the search window
+        self.original_size = self.get_size(region, 1)
+
+        #get the size of the search window with the enlargement factor
+        self.size = (region[2], region[3])
+
+        #get position and size of the search window
+        # self.search_window_position = (region[0] + region[2] / 2, region[1] + region[3] / 2) #set to center of search window
+        self.position = np.array([int(region[0] + region[2] / 2), int(region[1] + region[3] / 2)])
+        
+        patch, _ = get_patch(image, self.position, self.size)
+        #create the kernel for visual model
+        self.kernel = create_epanechnik_kernel(self.size[0], self.size[1], 1)
+        self.kernel_size = self.kernel.shape
+
+        self.template = extract_histogram(patch, self.histogram_bins, self.kernel)
+        self.template = self.template / np.sum(self.template)
+
+        #set the matrices for the motion model
+        self.Fi_matrika, self.Q_covariance, self.C, self.R = get_matrices_fixed(self.model, self.q_model_noise, 115)
+
+        #initialize particles using gausian distribution 
+        self.particles = np.zeros((self.number_of_particles, self.Q_covariance.shape[0]))
+        self.particles[:, :2] = sample_gauss(self.position, self.Q_covariance[:2, :2], self.number_of_particles)
+        self.weights = np.ones(self.number_of_particles) # weights are initialized to 1
+
+        #Print all the settings
+        # print("initialized")
+        # print(f"model: {self.model}")
+        # print(f"enlargement_factor: {self.enlargement_factor}")
+        # print(f"alpha_update: {self.alpha_update}")
+        # print(f"sigma_kernel: {self.sigma_kernel}")
+        # print(f"sigma_distance: {self.sigma_distance}")
+        # print(f"histogram_bins: {self.histogram_bins}")
+        # print(f"number_of_particles: {self.number_of_particles}")
+        # print(f"q_model_noise: {self.q_model_noise}")
+        # print(f"Fi_matrika: {self.Fi_matrika}")
+        # print(f"Q_covariance: {self.Q_covariance}")
+        # print(f"kernel: {self.kernel}")
+        # print(f"kernel_size: {self.kernel_size}")
+        # print(f"template: {self.template}")
+        # print(f"template_histogram: {self.template_histogram}")
+        # print(f"search_window_position: {self.search_window_position}")
+        # print(f"search_window_size: {self.search_window_size}")
+        # print(f"original_size: {self.original_size}")
+        # print(f"particles_state: {self.particles_state}")
+        # print(f"particles: {self.particles}")
+        # print(f"weights: {self.weights}")
+        # print("----------")
+
+    #code from instructions 
+    def resample_particles(self):
+        weights_normalized = self.weights / np.sum(self.weights)
+        weights_cumsum = np.cumsum(weights_normalized)
+        random_samples = np.random.rand(self.number_of_particles, 1 )
+        sampled_indexes = np.digitize(random_samples, weights_cumsum)
+        new_particles = self.particles[sampled_indexes.flatten(), :]
+        return new_particles
+
+    #hellinger distance function 
+    def hellinger_distance(self, p, q):
+        return 1 / np.sqrt(2) * np.linalg.norm(np.sqrt(p) - np.sqrt(q))
+
+    #function for Histogram extraction and normalization
     def extract_norm_histogram(self, patch):
 
-        #make sure the patch is same size as the kernel
-        # if patch.shape != self.kernel.shape:
-        #     print("patch is not the same size as the kernel")
-        #     print(f"patch: {patch.shape}")
-        #     print(f"kernel: {self.kernel.shape}")
-
-            # patch = cv2.resize(patch, self.kernel.shape)
-        
+        #get the histogram of the patch        
         histogram = extract_histogram(patch, self.histogram_bins, self.kernel)
 
         #normalize histogram
@@ -143,171 +276,72 @@ class ParticleTracker(Tracker):
     
     #function for istogram extraction
     def extract_histogram_from_image(self, image):
-        patch, _ = get_patch(image, self.search_window_position, self.search_window_size)
+        #get the patch from the image
+        patch, _ = get_patch(image, self.position, self.size)
 
-        #make sure the patch is same size as the kernel
-        # if patch.shape != self.kernel.shape:
-        #     print("patch is not the same size as the kernel")
-        #     print(f"patch: {patch.shape}")
-        #     print(f"kernel: {self.kernel.shape}")
-
-            # patch = cv2.resize(patch, self.kernel.shape)
-
+        #get the histogram of the patch
         histogram = extract_histogram(patch, self.histogram_bins, self.kernel)
 
         #normalize histogram
         histogram = histogram / np.sum(histogram)
 
         return histogram
-
-    def initialize(self, image, region):
-
-        region = np.array(region).astype(np.int64)
-
-        #make sure the region is odd sized 
-        if region[2] % 2 == 0:
-            region[2] += 1
-        if region[3] % 2 == 0:
-            region[3] += 1
-        
-        #get position and size of the search window
-        self.search_window_position = (region[0] + region[2] / 2, region[1] + region[3] / 2)
-
-        #set original size of the search window
-        self.original_size = (region[2], region[3])
-
-        #get the size of the search window with the enlargement factor
-        x_pos = int(region[2] * self.enlargement_factor)
-        y_pos = int(region[3] * self.enlargement_factor)
-        # make sure the search window is odd sized
-        if x_pos % 2 == 0:
-            x_pos += 1
-        if y_pos % 2 == 0:
-            y_pos += 1
-      
-        self.search_window_size = (x_pos, y_pos)
-        
-        np.random.seed(1)
-        random.seed(1)
-
-        #define the matrix for the motion model
-        self.Fi_matrika, _, self.Q_covariance, _ = get_matrices(self.model, self.q_model_noise, 1)
-
-
-        #create the kernel for visual model
-        self.kernel = create_epanechnik_kernel(self.search_window_size[0], self.search_window_size[1], self.sigma_kernel)
-        self.kernel_size = self.kernel.shape
-        
-        #get histogram of the image in the search window
-        self.template, _ = get_patch(image, self.search_window_position, self.search_window_size)
-        
-        self.template_histogram = self.extract_norm_histogram(self.template)
-
-        #depending on the model, initialize particles state
-        self.particles_state = np.array([self.search_window_position[0], self.search_window_position[1]])
-        if self.model == 'NCV':
-            self.particles_state = np.append(self.particles_state, [0, 0])
-        if self.model == 'NCA':
-            self.particles_state = np.append(self.particles_state, [0, 0, 0, 0])
-
-        #initialize particles using gausian distribution
-        self.particles = sample_gauss(self.particles_state, self.Q_covariance, self.number_of_particles) # majbe tuki kej zaokroziš??
-        self.particles[:, 0:2] = np.around(self.particles[:, 0:2])
-        self.weights = np.ones(self.number_of_particles) # weights are initialized to 1
     
-    #code from instructions 
-    def resample_particles(self):
-        weights_normalized = self.weights / np.sum(self.weights)
-        weights_cumsum = np.cumsum(weights_normalized)
-        random_samples = np.random.rand(self.number_of_particles)
-        sampled_indexes = np.digitize(random_samples, weights_cumsum)
-        self.particles[sampled_indexes.flatten(), :]
-
-
-    def hellinger_distance(self, p, q):
-        return 1 / np.sqrt(2) * np.linalg.norm(np.sqrt(p) - np.sqrt(q))
-    
+    #function for calculating the weights
     def calculate_weights(self, image):
-        #print("calculate weights") #debug
+
         for i in range(self.number_of_particles):
-            try: 
-                #get the patch from the image
-                patch, _ = get_patch(image, (self.particles[i, 0], self.particles[i, 1]), self.kernel_size) #flag
-                
-                # print(f"patch: {patch.shape}")
-                # print(f"kernel: {self.kernel_size}")
-                # print(f"search_window: {self.search_window_size}")
-
-                # get the histogram of the patch
-                patch_histogram = self.extract_norm_histogram(patch)
-
-                #calculate the similarity between the patch and the template using hellinger distance
-                hellinger_distance = self.hellinger_distance(patch_histogram, self.template_histogram)
-                probabilty = np.exp(-0.5 * hellinger_distance ** 2 / self.sigma_distance ** 2)
+            x_coordinate = self.particles[i, 0]
+            y_coordinate = self.particles[i, 1]
             
-            except Exception:
-                probabilty = 0
-                #sometimes the patch is of by 1 in one dimension and I am not sure why that happens
-                #I think it is because of the way I calculate the patch position
-                #I tried to fix it but I could not figure it out
-                #I am not sure if this is the best way to fix it but it works for now 
-            
-            #apply the new weight of the particle
-            self.weights[i] = probabilty
+            #check if particle is out of bounds
+            if x_coordinate > image.shape[1] or y_coordinate > image.shape[0] or x_coordinate < 0 or y_coordinate < 0:
+                self.weights[i] = 0
+                # print("particle out of bunds")
+            else:
+                temp = self.template / np.sum(self.template)
+                # print("this is temp: ", temp.shape)
+                # print("position, size", (x_direction, y_direction), self.size)
+                patch, _ = get_patch(image, (x_coordinate, y_coordinate), self.size)
 
+                #get the normilized histogram of the patch
+                histogram = self.extract_norm_histogram(patch)
+
+                # hellinger = np.linalg.norm(np.sqrt(histogram) - np.sqrt(temp)) / np.sqrt(2)
+                hellinger_fun = self.hellinger_distance(histogram, temp)
+                self.weights[i] = np.exp(- 0.5 * (hellinger_fun ** 2 / self.sigma_distance ** 2))
+        
+        #normalize weights
+        self.weights = self.weights / np.sum(self.weights) + 0.0001
+
+    #function for tracking the object
     def track(self, image):
             
-        #replace the particles by sampling new particles absed on the weight distribution
-        self.resample_particles()
+        # replace the particles by sampling new particles based on the weight distribution
+        new_particles = self.resample_particles()
 
-        #predict the particles using the motion model
-        self.particles = np.matmul(self.Fi_matrika, self.particles.T).T
-
-        #dont forget to add noise to the particles
-        self.particles = self.particles + sample_gauss(np.zeros(self.Fi_matrika.shape[0]), self.Q_covariance, self.number_of_particles)
-        self.particles[:, 0:2] = np.around(self.particles[:, 0:2])
+        # predict the particles using the motion model
+        noise = sample_gauss(np.zeros(self.Q_covariance.shape[0]), self.Q_covariance, self.number_of_particles)
+        
+        self.particles = (self.Fi_matrika @ new_particles.T).T + noise
+        #self.particles = np.matmul(self.Fi_matrika, new_particles.T).T + noise
 
         # recalculating the weights based on visiual model similarity
         self.calculate_weights(image)
-        #this might be very slow debug later
         
-        # Compute the new state estimate
-        weights_normalized = self.weights / np.sum(self.weights)
-        self.particles_state = np.matmul( np.transpose(self.particles), weights_normalized)
+        # COMPUTE NEW STATE ESTIMATE
 
-        #update the template
-        #round the particle state to get the position of the search window
-        position = np.around(self.particles_state[0:2])
-        self.template, _ = get_patch(image, position, self.search_window_size) #flag 
-        # here the template get some weird shape and I am not sure why
-        # I tried to fix it but I could not figure it out
-        # I am not sure if this is the best way to fix it amybe just skip the update if the shape is wrong ?? 
-        
-        # print(f"particles_state: {position}")
-        # print(f"template: {self.template.shape}")
-        # print(f"kernel: {self.kernel_size}")
-        # print(f"search_window: {self.search_window_size}")
-        # print("----------")
+        #self.particles_state = np.matmul( np.transpose(self.particles), weights_normalized)
+        self.position = self.weights.T @ self.particles[:, :2]    
 
-        #make sure the template is the same size as the kernel
-        if self.template.shape[0] != self.kernel.shape[0] or self.template.shape[1] != self.kernel.shape[1]:
-            print("template is not the same size as the kernel")
-            print(f"template: {self.template.shape}")
-            print(f"kernel: {self.kernel.shape}")
-            self.template = cv2.resize(self.template, self.kernel.shape)
-            print(f"template new shape: {self.template.shape}")
-        
-        hist = self.extract_norm_histogram(self.template)
-        self.template_histogram = self.alpha_update * hist + (1 - self.alpha_update) * self.template_histogram
+        patch, _ = get_patch(image, self.position, self.size) #flag
 
-        # return the new state estimate
-        return [int(self.particles_state[0] - self.particles_state[0]/2), int(self.particles_state[1]- self.particles_state[1]/2) , self.search_window_size[0], self.search_window_size[1]]
+        histogram_fun = self.extract_norm_histogram(patch)
 
+        # Update the template
+        self.template = (1 - self.alpha_update) * self.template + self.alpha_update * histogram_fun
 
+        left = max(self.position[0] - self.size[0] / 2, 0)
+        top = max(self.position[1] - self.size[1] / 2, 0)
 
-
-
-#TODO
-# Tracker takes a lot of time to evaluate it should only take about 2mins 
-# I dont know what the problem is yet need to debug it
-# I it might be the calculate_weights function that takes a lot of time
+        return [left, top, self.size[0], self.size[1]]
